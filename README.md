@@ -3,6 +3,7 @@
 Version: 0.1.0-prototype  
 Target: Roundcube 1.7.7 / PHP 8.2+  
 Status: test-server prototype; not production-ready.
+
 Requirements: Gecka ident_switch - https://github.com/Gecka-Apps/roundcube-ident_switch
 
 ## What this prototype does
