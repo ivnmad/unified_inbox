@@ -23,7 +23,7 @@ Requirements: Gecka ident_switch - https://github.com/Gecka-Apps/roundcube-ident
 - It expects the primary-account baseline session keys created by Gecka (`password_iswitch`, `storage_host_iswitch`, etc.). If those are absent, the primary account will not appear.
 - The prototype currently fetches a bounded recent UID window per account and then sorts those headers by date. It is not yet a complete historical mailbox index.
 - Exact PHP object property formats for message headers must be verified against the installed Roundcube build during the first test.
-- The plugin has not yet been installed or exercised against the user's four live IMAP endpoints. Treat it as experimental and test only on the isolated test server.
+- The plugin has not yet been installed or exercised against the user's live IMAP endpoints. Treat it as experimental and test only on the isolated test server.
 - The plugin does not alter Roundcube core files, Gecka files, Gecka tables or IMAP contents.
 
 ## Install on the isolated test server
