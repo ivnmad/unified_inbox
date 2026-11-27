@@ -1,8 +1,7 @@
-#unified-inbox { padding: 1rem; }
-#unified-inbox h1 { margin: 0 0 0.75rem; }
-#unified-inbox fieldset { margin: 1rem 0; padding: 0.75rem; }
-#unified-inbox .unified-account-list { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; }
-#unified-inbox .unified-account-list label { white-space: nowrap; }
+#unified-inbox { padding: 1rem; overflow: auto; }
+#unified-inbox h2 { margin: 0 0 1rem; }
+#unified-inbox .hint { color: var(--text-secondary, #666); margin: .5rem 0 1rem; }
+#unified-inbox .unified-account-list { display: flex; flex-direction: column; gap: .5rem; margin: .75rem 0; }
+#unified-inbox .unified-account-list label { display: block; }
 #unified-inbox .unified-messages { width: 100%; }
-#unified-inbox .hint { color: #777; font-size: 0.9em; }
-#unified-inbox .ui-alert { margin: 0.75rem 0; padding: 0.75rem; border: 1px solid #b66; }
+#unified-inbox .unified-messages td { overflow-wrap: anywhere; }

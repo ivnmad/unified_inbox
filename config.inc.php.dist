@@ -1,8 +1,2 @@
 <?php
-
-// Unified Inbox prototype settings.
-// Copy to config.inc.php only if you need to override these defaults.
-
-$config['unified_inbox_enabled'] = true;
-$config['unified_inbox_max_per_account'] = 200;
-$config['unified_inbox_connection_timeout'] = 8;
+// No plugin-specific configuration is required for the prototype.
