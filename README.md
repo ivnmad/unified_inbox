@@ -4,8 +4,6 @@ Version: 0.1.0-prototype
 Target: Roundcube 1.7.7 / PHP 8.2+  
 Status: test-server prototype; not production-ready.
 
-Requirements: Gecka ident_switch - https://github.com/Gecka-Apps/roundcube-ident_switch
-
 ## What this prototype does
 
 - Adds a separate Unified Inbox taskbar entry.
@@ -23,7 +21,7 @@ Requirements: Gecka ident_switch - https://github.com/Gecka-Apps/roundcube-ident
 - It expects the primary-account baseline session keys created by Gecka (`password_iswitch`, `storage_host_iswitch`, etc.). If those are absent, the primary account will not appear.
 - The prototype currently fetches a bounded recent UID window per account and then sorts those headers by date. It is not yet a complete historical mailbox index.
 - Exact PHP object property formats for message headers must be verified against the installed Roundcube build during the first test.
-- The plugin has not yet been installed or exercised against the user's live IMAP endpoints. Treat it as experimental and test only on the isolated test server.
+- The plugin has not yet been installed or exercised against the user's four live IMAP endpoints. Treat it as experimental and test only on the isolated test server.
 - The plugin does not alter Roundcube core files, Gecka files, Gecka tables or IMAP contents.
 
 ## Install on the isolated test server
@@ -60,3 +58,22 @@ No database migration is required. Account selections are stored as a Roundcube 
 - The plugin uses the logged-in Roundcube user's identity and user ID for account lookup.
 - Do not expose PHP errors or debug output to the public web.
 - Do not deploy this prototype to production.
+
+
+## Gecka ident_switch selector integration (0.1.1)
+
+When Gecka ident_switch 5.0.x is enabled, Unified Inbox adds a `Unified Inbox`
+option at the top of Gecka's existing account selector. Selecting it opens the
+read-only unified view. All normal account choices continue to call Gecka's
+original account-switch handler.
+
+Gecka 5.0.4 does not expose a public hook for extending this selector. The
+integration therefore uses a small client-side adapter targeting Gecka's current
+`#plugin-ident_switch-account` element and preserves its existing change handler.
+It does not edit Gecka files or database tables. Because this is a DOM-level
+integration rather than a public API, re-test it after Gecka upgrades. If the
+selector is unavailable, the plugin's page remains reachable directly at
+`?_task=mail&_action=plugin.unified_inbox`.
+
+This remains a read-only prototype and has not yet been functionally validated
+against the test server's live IMAP accounts.

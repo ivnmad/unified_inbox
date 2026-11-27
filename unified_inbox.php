@@ -24,18 +24,20 @@ class unified_inbox extends rcube_plugin
         $this->register_action('plugin.unified_inbox_save', [$this, 'save_preferences']);
         $this->register_handler('plugin.unified_inbox_body', [$this, 'ui']);
 
-        $this->add_hook('render_page', [$this, 'add_taskbar_button']);
+        $this->add_hook('render_page', [$this, 'integrate_gecka_switcher']);
     }
 
-    public function add_taskbar_button($args)
+    /**
+     * Add a Unified Inbox choice to Gecka ident_switch 5.x selector.
+     *
+     * Gecka currently has no public hook for extending its options. This adapter
+     * targets its documented-in-source DOM selector and preserves Gecka's
+     * original onchange handler for every normal account value.
+     */
+    public function integrate_gecka_switcher($args)
     {
         if (($args['template'] ?? '') === 'mail') {
-            $this->add_button([
-                'command' => 'plugin.unified_inbox',
-                'class'   => 'button-unified-inbox',
-                'label'   => 'Unified Inbox',
-                'title'   => 'Unified Inbox',
-            ], 'taskbar');
+            $this->include_script('skins/elastic/unified_inbox.js');
         }
 
         return $args;
