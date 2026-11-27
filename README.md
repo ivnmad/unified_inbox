@@ -1,6 +1,12 @@
-# Unified Inbox 0.1.2
+# Unified Inbox 0.1.3
 
 Independent Roundcube plugin prototype for a read-only merged view of the primary mailbox and enabled Gecka `ident_switch` accounts.
+
+## Changes in 0.1.3
+
+- Replaces raw numeric IMAP flag values with the four requested statuses: **Unread**, **Read**, **Unread Flagged**, and **Read Flagged**.
+- Interprets `\Seen` and `\Flagged` independently, retaining the flag names rather than flattening the IMAP flag map into numeric values.
+- This remains a read-only release: it does not change message flags or mailbox contents.
 
 ## Changes in 0.1.2
 
@@ -22,14 +28,14 @@ The Gecka adapter reads the enabled root account rows from Gecka's `ident_switch
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo cp -a unified_inbox unified_inbox.backup-0.1.1
+   sudo cp -a unified_inbox unified_inbox.backup-0.1.2
    ```
 
-2. Upload `unified_inbox-0.1.2.zip` to the test server, then extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root.
+2. Upload `unified_inbox-0.1.3.zip` to the test server, then extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root.
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo unzip -o /path/to/unified_inbox-0.1.2.zip
+   sudo unzip -o /path/to/unified_inbox-0.1.3.zip
    sudo chown -R www-data:www-data unified_inbox
    ```
 
@@ -54,10 +60,10 @@ On the test server only:
 ```bash
 cd /var/www/html/roundcube/plugins
 sudo rm -rf unified_inbox
-sudo mv unified_inbox.backup-0.1.1 unified_inbox
+sudo mv unified_inbox.backup-0.1.2 unified_inbox
 ```
 
-If you have not made the backup, do not run the rollback commands; restore your prior 0.1.1 ZIP instead.
+If you have not made the backup, do not run the rollback commands; restore your prior 0.1.2 ZIP instead.
 
 ## Compatibility
 

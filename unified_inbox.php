@@ -218,7 +218,10 @@ class unified_inbox extends rcube_plugin
                 $date = $message['timestamp'] ? date('Y-m-d H:i', $message['timestamp']) : '';
                 $html .= '<tr><td>' . rcube::Q($date) . '</td><td>' . rcube::Q($message['from']) . '</td><td>'
                     . rcube::Q($message['subject']) . '</td><td>' . rcube::Q($message['account']) . '</td><td>'
-                    . rcube::Q(implode(', ', $message['flags'])) . '</td></tr>';
+                    . '<span class="unified-status' . (!empty($message['seen']) ? ' is-read' : ' is-unread') . (!empty($message['flagged']) ? ' is-flagged' : '') . '">'
+                    . rcube::Q(!empty($message['seen']) ? (!empty($message['flagged']) ? 'Read Flagged' : 'Read') : (!empty($message['flagged']) ? 'Unread Flagged' : 'Unread'))
+                    . '</span>'
+                    . '</td></tr>';
             }
         }
 

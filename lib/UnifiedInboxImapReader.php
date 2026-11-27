@@ -87,10 +87,12 @@ class UnifiedInboxImapReader
                     $timestamp = strtotime((string) $header->date) ?: 0;
                 }
 
-                $flags = [];
-                if (!empty($header->flags) && is_array($header->flags)) {
-                    $flags = array_values($header->flags);
-                }
+                // rcube_imap_generic may expose flags as an associative
+                // name => enabled map. Keep names: discarding keys turns
+                // values such as 1, 1 into meaningless numeric statuses.
+                $flags = is_array($header->flags ?? null) ? $header->flags : [];
+                $seen = $this->has_flag($flags, 'seen');
+                $flagged = $this->has_flag($flags, 'flagged');
 
                 $messages[] = [
                     'account'   => $this->account['label'],
@@ -101,6 +103,8 @@ class UnifiedInboxImapReader
                     'from'      => $this->header_value($header, 'from'),
                     'subject'   => $this->header_value($header, 'subject'),
                     'flags'     => $flags,
+                    'seen'      => $seen,
+                    'flagged'   => $flagged,
                 ];
             }
 
@@ -111,6 +115,37 @@ class UnifiedInboxImapReader
             }
             unset($password);
         }
+    }
+
+
+    /** Detect a system flag in either name=>boolean or indexed-name form. */
+    private function has_flag(array $flags, string $wanted): bool
+    {
+        foreach ($flags as $key => $value) {
+            $key_name = strtolower(ltrim((string) $key, "\\"));
+            $value_name = is_scalar($value) ? strtolower(ltrim((string) $value, "\\")) : '';
+
+            if ($key_name === $wanted && $this->flag_enabled($value)) {
+                return true;
+            }
+            if ($value_name === $wanted || $value_name === 'system_' . $wanted) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Interpret common IMAP boolean representations without treating 0 as set. */
+    private function flag_enabled($value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_numeric($value)) {
+            return (int) $value !== 0;
+        }
+        return in_array(strtolower(trim((string) $value)), ['true', 'yes', 'on'], true);
     }
 
     private function header_value($header, string $name): string
