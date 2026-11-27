@@ -89,13 +89,13 @@ class UnifiedInboxAccountProvider
             $ssl = $_SESSION['storage_ssl' . $postfix] ?? null;
             $port = (int) ($_SESSION['storage_port' . $postfix] ?? 143);
         } else {
-            // No saved primary snapshot: only use the live Roundcube session
-            // if Gecka is currently showing the actual primary login account.
-            $active_username = (string) ($_SESSION['username'] ?? $username);
-            if (strcasecmp($active_username, $username) !== 0) {
-                return null;
-            }
-
+            // No saved primary snapshot: Roundcube's live session is the
+            // primary login session. Do not compare $_SESSION['username']:
+            // Gecka and Roundcube versions can store that value in different
+            // forms (or omit it), which previously hid the primary account
+            // when Unified Inbox was opened directly from the primary inbox.
+            // When Gecka has switched accounts, its preserved _iswitch
+            // snapshot above takes precedence.
             $encrypted = $_SESSION['password'] ?? null;
             if (!is_string($encrypted) || $encrypted === '') {
                 return null;
@@ -111,8 +111,11 @@ class UnifiedInboxAccountProvider
         }
 
         $identity = $this->rc->user->get_identity();
-        $label = (string) ($_SESSION['global_alias'] ?? ($identity['name'] ?? $username));
-        if (trim($label) === '') {
+        // Use the actual mailbox/login address consistently with Gecka
+        // accounts; a display name such as "John Smith" is ambiguous when
+        // several accounts are selected.
+        $label = trim((string) ($identity['email'] ?? ''));
+        if ($label === '') {
             $label = $username;
         }
 

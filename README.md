@@ -85,3 +85,8 @@ If you have not made the backup, do not run the rollback commands; restore your 
 ## Compatibility
 
 Designed against Roundcube 1.7.7 / PHP 8.4 and Gecka ident_switch 5.0.x, using the inspected account table/session conventions. Test on the isolated mirror first. Do not deploy to production until the page, preferences persistence, and per-account IMAP reads have been verified.
+
+
+### 0.1.6 changes
+- Primary account is discovered from the live Roundcube login session when no Gecka-preserved primary snapshot is available; removed a fragile session-username comparison that could hide it when opening Unified Inbox from the primary inbox.
+- Primary account label now uses the login identity email address, matching the other account labels.
