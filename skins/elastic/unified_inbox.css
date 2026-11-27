@@ -9,3 +9,10 @@
 #unified-inbox .unified-status { display: inline-block; padding: .15rem .45rem; border-radius: .35rem; white-space: nowrap; }
 #unified-inbox .unified-status.is-unread { font-weight: 700; }
 #unified-inbox .unified-status.is-flagged { font-weight: 700; }
+
+#unified-inbox .unified-message-meta { display: grid; grid-template-columns: minmax(4rem, auto) 1fr; gap: .35rem 1rem; }
+#unified-inbox .unified-message-meta dt { font-weight: 700; }
+#unified-inbox .unified-message-meta dd { margin: 0; overflow-wrap: anywhere; }
+#unified-inbox .unified-message-body { overflow-wrap: anywhere; }
+#unified-inbox .unified-message-plain { white-space: normal; line-height: 1.5; }
+#unified-inbox .unified-message-html { overflow-x: auto; }

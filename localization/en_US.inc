@@ -9,7 +9,7 @@ $labels = [
     'deselect_all' => 'Deselect all',
     'save_selection' => 'Save account selection',
     'open_unified_inbox' => 'Open Unified Inbox',
-    'readonly_intro' => 'Read-only preview. Messages remain on their original mail servers.',
+    'readonly_intro' => 'Messages remain on their original mail servers. Select a subject to open the message.',
     'choose_accounts' => 'Choose included accounts in Settings',
     'account_unavailable' => 'Could not retrieve messages from this account.',
     'date' => 'Date',
@@ -18,7 +18,10 @@ $labels = [
     'account' => 'Account',
     'status' => 'Status',
     'no_messages' => 'No messages found in the selected accounts, or no accounts are selected.',
-    'bounded_window' => 'Showing up to 50 messages per page from a bounded recent window per account. This prototype does not open, modify, move, delete or send messages.',
+    'bounded_window' => 'Showing up to 50 messages per page from a bounded recent window per account. Opening a message retrieves its body from the originating account; message operations are not yet available.',
     'previous' => 'Previous page',
     'next' => 'Next page',
 ];
+
+$labels['back_to_unified'] = 'Back to Unified Inbox';
+$labels['message_unavailable'] = 'This message could not be opened. It may have been moved or deleted, or its account may be unavailable.';

@@ -1,6 +1,15 @@
-# Unified Inbox 0.1.3
+# Unified Inbox 0.1.4
 
 Independent Roundcube plugin prototype for a read-only merged view of the primary mailbox and enabled Gecka `ident_switch` accounts.
+
+## Changes in 0.1.4
+
+- Makes each subject a link to a Unified Inbox message-reading page.
+- Opens the message using its originating account key and account-local IMAP UID, always in that account's INBOX.
+- Fetches headers and a text body through a separate short-lived IMAP connection; it does not switch Gecka's active account.
+- Prefers HTML when available and sanitizes it with Roundcube's `rcube_washtml` while blocking remote resources; falls back to plain text.
+- Keeps the four independent status labels unchanged.
+- Does not yet implement mark read/unread, delete, move, attachments, or reply. Message opening is not intended to alter flags.
 
 ## Changes in 0.1.3
 
@@ -28,14 +37,14 @@ The Gecka adapter reads the enabled root account rows from Gecka's `ident_switch
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo cp -a unified_inbox unified_inbox.backup-0.1.2
+   sudo cp -a unified_inbox unified_inbox.backup-before-0.1.4
    ```
 
-2. Upload `unified_inbox-0.1.3.zip` to the test server, then extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root.
+2. Upload `unified_inbox_0.1.4.zip` to the test server, then extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root.
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo unzip -o /path/to/unified_inbox-0.1.3.zip
+   sudo unzip -o /path/to/unified_inbox_0.1.4.zip
    sudo chown -R www-data:www-data unified_inbox
    ```
 
@@ -49,6 +58,9 @@ The Gecka adapter reads the enabled root account rows from Gecka's `ident_switch
 
 5. Sign out and back in (or reload Roundcube), then test:
    - Gecka selector → Unified Inbox should display the inbox page.
+   - Click a message subject; it should open with sender, recipients, date, account and body.
+   - Use Back to Unified Inbox to return to the merged list.
+   - Verify the original Gecka account selection is unchanged.
    - Settings should show a **Unified Inbox** section.
    - Select/deselect accounts, save, reopen Settings, and verify the selection persists.
    - Open Unified Inbox and verify messages from the selected accounts are merged newest-first.
@@ -60,7 +72,7 @@ On the test server only:
 ```bash
 cd /var/www/html/roundcube/plugins
 sudo rm -rf unified_inbox
-sudo mv unified_inbox.backup-0.1.2 unified_inbox
+sudo mv unified_inbox.backup-before-0.1.4 unified_inbox
 ```
 
 If you have not made the backup, do not run the rollback commands; restore your prior 0.1.2 ZIP instead.

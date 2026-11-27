@@ -173,4 +173,164 @@ class UnifiedInboxImapReader
 
         return trim(strip_tags((string) $value));
     }
+
+    /** Fetch one message by account-local UID without changing its flags. */
+    public function fetch_message(int $uid, string $mailbox = 'INBOX'): array
+    {
+        if ($uid < 1 || $mailbox !== 'INBOX') {
+            throw new InvalidArgumentException('Invalid message reference.');
+        }
+
+        $password = $this->account['password'];
+        if (!empty($this->account['encrypted'])) {
+            $password = $this->rc->decrypt($password);
+        }
+        if (!is_string($password) || $password === '') {
+            throw new RuntimeException('Could not decrypt the stored IMAP password.');
+        }
+
+        $imap = new rcube_imap_generic();
+        $options = [
+            'port' => (int) $this->account['port'],
+            'ssl_mode' => $this->account['ssl'] ?: null,
+            'timeout' => 12,
+        ];
+
+        try {
+            if (!$imap->connect((string) $this->account['host'], (string) $this->account['username'], $password, $options)) {
+                throw new RuntimeException('IMAP connection or authentication failed.');
+            }
+            if (!$imap->select($mailbox)) {
+                throw new RuntimeException('Could not select the requested mailbox.');
+            }
+
+            $header = $imap->fetchHeader($mailbox, $uid, true, true);
+            if (!$header || !is_object($header)) {
+                throw new RuntimeException('The message no longer exists in this mailbox.');
+            }
+
+            $structure = $header->bodystructure ?? $imap->getStructure($mailbox, $uid, true);
+            if (!is_array($structure) || !$structure) {
+                throw new RuntimeException('The message body structure could not be read.');
+            }
+
+            $parts = [];
+            $this->collect_text_parts($structure, '', $parts);
+            // Prefer HTML, but fall back to plain text. Only the first suitable
+            // part of each type is used, avoiding attachment content in the view.
+            $chosen = null;
+            foreach (['text/html', 'text/plain'] as $wanted) {
+                foreach ($parts as $part) {
+                    if ($part['type'] === $wanted) {
+                        $chosen = $part;
+                        break 2;
+                    }
+                }
+            }
+
+            $body_html = '<p class="hint">This message has no displayable text body.</p>';
+            if ($chosen) {
+                $part_id = $chosen['part'] !== '' ? $chosen['part'] : 'TEXT';
+                $body = $imap->handlePartBody(
+                    $mailbox,
+                    $uid,
+                    true,
+                    $part_id,
+                    $chosen['encoding'],
+                    null,
+                    null,
+                    false,
+                    2097152
+                );
+                if (is_string($body)) {
+                    $charset = $chosen['charset'] ?: 'UTF-8';
+                    if (class_exists('rcube_charset')) {
+                        $body = rcube_charset::convert($body, $charset, RCUBE_CHARSET);
+                    }
+                    if ($chosen['type'] === 'text/html') {
+                        $washer = new rcube_washtml(['allow_remote' => false, 'charset' => RCUBE_CHARSET]);
+                        $body_html = '<div class="unified-message-html">' . $washer->wash($body) . '</div>';
+                    } else {
+                        $body_html = '<div class="unified-message-plain">' . nl2br(htmlspecialchars($body, ENT_QUOTES | ENT_SUBSTITUTE, RCUBE_CHARSET)) . '</div>';
+                    }
+                }
+            }
+
+            return [
+                'uid' => $uid,
+                'from' => $this->decode_header_value($header->from ?? ''),
+                'to' => $this->decode_header_value($header->to ?? ''),
+                'cc' => $this->decode_header_value($header->cc ?? ''),
+                'subject' => $this->decode_header_value($header->subject ?? ''),
+                'date' => (string) ($header->date ?? $header->internaldate ?? ''),
+                'body_html' => $body_html,
+            ];
+        } finally {
+            if ($imap->connected()) {
+                $imap->closeConnection();
+            }
+            unset($password);
+        }
+    }
+
+    /** Find leaf text parts by IMAP BODYSTRUCTURE part identifier. */
+    private function collect_text_parts(array $node, string $path, array &$parts): void
+    {
+        // Multipart BODYSTRUCTURE begins with one or more child arrays.
+        // Other leaf extensions (e.g. disposition/language) can also be arrays,
+        // so do not mistake those for body parts.
+        if (isset($node[0]) && is_array($node[0])) {
+            $index = 0;
+            while (isset($node[$index]) && is_array($node[$index])) {
+                $part_id = $path === '' ? (string) ($index + 1) : $path . '.' . ($index + 1);
+                $this->collect_text_parts($node[$index], $part_id, $parts);
+                $index++;
+            }
+            return;
+        }
+
+        // Leaf BODYSTRUCTURE fields follow the IMAP BODYSTRUCTURE layout.
+        // Skip explicit attachments so their text is not mistaken for the body.
+        foreach ([8, 9] as $disposition_index) {
+            $disposition = $node[$disposition_index] ?? null;
+            if (is_array($disposition) && strtolower((string) ($disposition[0] ?? '')) === 'attachment') {
+                return;
+            }
+        }
+        $type = strtolower((string) ($node[0] ?? ''));
+        $subtype = strtolower((string) ($node[1] ?? ''));
+        if ($type === 'text' && in_array($subtype, ['plain', 'html'], true)) {
+            $params = is_array($node[2] ?? null) ? $node[2] : [];
+            $charset = '';
+            foreach ($params as $k => $v) {
+                if (strtolower((string) $k) === 'charset') {
+                    $charset = (string) $v;
+                }
+            }
+            $parts[] = [
+                'part' => $path,
+                'type' => 'text/' . $subtype,
+                'encoding' => $node[5] ?? null,
+                'charset' => $charset,
+            ];
+        }
+    }
+
+    private function decode_header_value($value): string
+    {
+        if (is_array($value)) {
+            $value = implode(', ', array_map(static function ($item) {
+                if (is_object($item) && isset($item->string)) return $item->string;
+                return is_scalar($item) ? (string) $item : '';
+            }, $value));
+        } elseif (is_object($value) && isset($value->string)) {
+            $value = $value->string;
+        }
+        $value = is_scalar($value) ? (string) $value : '';
+        if (class_exists('rcube_mime')) {
+            $value = rcube_mime::decode_mime_string($value);
+        }
+        return trim(strip_tags($value));
+    }
+
 }

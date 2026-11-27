@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unified Inbox - read-only multi-account inbox prototype.
+ * Unified Inbox - multi-account inbox prototype with read-only message viewing.
  *
  * Independent Roundcube plugin. Reads Gecka ident_switch account records
  * without changing Gecka's tables or Roundcube core.
@@ -21,6 +21,7 @@ class unified_inbox extends rcube_plugin
         $this->include_stylesheet('skins/elastic/unified_inbox.css');
 
         $this->register_action('plugin.unified_inbox', [$this, 'action']);
+        $this->register_action('plugin.unified_inbox_message', [$this, 'message_action']);
         $this->register_action('plugin.unified_inbox_prefs', [$this, 'preferences_action']);
         $this->register_action('plugin.unified_inbox_save', [$this, 'save_preferences']);
 
@@ -77,6 +78,12 @@ class unified_inbox extends rcube_plugin
         $rc->output->send('plugin');
     }
 
+    /** Open a message from its originating account, folder and UID. */
+    public function message_action()
+    {
+        $this->send_plugin_page('Unified Inbox - Message');
+    }
+
     /** Save selected account keys to this Roundcube user's preferences. */
     public function save_preferences()
     {
@@ -115,6 +122,9 @@ class unified_inbox extends rcube_plugin
     public function page_body($attrib = [])
     {
         $rc = rcmail::get_instance();
+        if ($rc->action === 'plugin.unified_inbox_message') {
+            return $this->render_message();
+        }
         if ($rc->task === 'settings' || $rc->action === 'plugin.unified_inbox_prefs') {
             return $this->render_preferences();
         }
@@ -162,6 +172,48 @@ class unified_inbox extends rcube_plugin
         }
 
         $html .= '<p><a href="./?_task=mail&amp;_action=plugin.unified_inbox">' . rcube::Q($this->gettext('open_unified_inbox')) . '</a></p>';
+        $html .= '</div>';
+        return $html;
+    }
+
+    private function render_message(): string
+    {
+        $rc = rcmail::get_instance();
+        $account_key = (string) rcube_utils::get_input_value('_account', rcube_utils::INPUT_GET);
+        $uid = (int) rcube_utils::get_input_value('_uid', rcube_utils::INPUT_GET);
+        $accounts = (new UnifiedInboxAccountProvider($rc))->get_accounts();
+        $selected = $this->selected_accounts($accounts);
+        $account = null;
+        foreach ($accounts as $candidate) {
+            if ($candidate['key'] === $account_key && in_array($candidate['key'], $selected, true)) {
+                $account = $candidate;
+                break;
+            }
+        }
+
+        $html = '<div id="unified-inbox" class="boxcontent unified-message-view">';
+        $html .= '<p><a href="./?_task=mail&amp;_action=plugin.unified_inbox">&larr; ' . rcube::Q($this->gettext('back_to_unified')) . '</a></p>';
+        if (!$account || $uid < 1) {
+            $html .= '<div class="ui-alert">' . rcube::Q($this->gettext('message_unavailable')) . '</div></div>';
+            return $html;
+        }
+
+        try {
+            $reader = new UnifiedInboxImapReader($rc, $account);
+            $message = $reader->fetch_message($uid, 'INBOX');
+            $html .= '<h2>' . rcube::Q($message['subject'] ?: '(no subject)') . '</h2>';
+            $html .= '<dl class="unified-message-meta">';
+            $html .= '<dt>' . rcube::Q($this->gettext('from')) . '</dt><dd>' . rcube::Q($message['from']) . '</dd>';
+            if ($message['to'] !== '') $html .= '<dt>To</dt><dd>' . rcube::Q($message['to']) . '</dd>';
+            if ($message['cc'] !== '') $html .= '<dt>Cc</dt><dd>' . rcube::Q($message['cc']) . '</dd>';
+            $html .= '<dt>' . rcube::Q($this->gettext('date')) . '</dt><dd>' . rcube::Q($message['date']) . '</dd>';
+            $html .= '<dt>' . rcube::Q($this->gettext('account')) . '</dt><dd>' . rcube::Q($account['label']) . '</dd>';
+            $html .= '</dl><hr><div class="unified-message-body">' . $message['body_html'] . '</div>';
+        } catch (Throwable $e) {
+            rcube::raise_error(['code' => 500, 'type' => 'php', 'file' => __FILE__, 'line' => __LINE__,
+                'message' => 'Unified Inbox message open failed: ' . $e->getMessage()], true, false);
+            $html .= '<div class="ui-alert">' . rcube::Q($this->gettext('message_unavailable')) . '</div>';
+        }
         $html .= '</div>';
         return $html;
     }
@@ -216,8 +268,10 @@ class unified_inbox extends rcube_plugin
         } else {
             foreach ($messages as $message) {
                 $date = $message['timestamp'] ? date('Y-m-d H:i', $message['timestamp']) : '';
+                $open_url = './?_task=mail&amp;_action=plugin.unified_inbox_message&amp;_account=' . rawurlencode($message['account_key'])
+                    . '&amp;_uid=' . (int) $message['uid'];
                 $html .= '<tr><td>' . rcube::Q($date) . '</td><td>' . rcube::Q($message['from']) . '</td><td>'
-                    . rcube::Q($message['subject']) . '</td><td>' . rcube::Q($message['account']) . '</td><td>'
+                    . '<a href="' . $open_url . '">' . rcube::Q($message['subject'] ?: '(no subject)') . '</a></td><td>' . rcube::Q($message['account']) . '</td><td>'
                     . '<span class="unified-status' . (!empty($message['seen']) ? ' is-read' : ' is-unread') . (!empty($message['flagged']) ? ' is-flagged' : '') . '">'
                     . rcube::Q(!empty($message['seen']) ? (!empty($message['flagged']) ? 'Read Flagged' : 'Read') : (!empty($message['flagged']) ? 'Unread Flagged' : 'Unread'))
                     . '</span>'
