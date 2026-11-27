@@ -71,35 +71,59 @@ class UnifiedInboxAccountProvider
 
     private function get_primary_account(): ?array
     {
+        // When Gecka has switched to a secondary mailbox, it preserves the
+        // original login mailbox credentials under the _iswitch suffix.
+        // When the user is currently on the primary mailbox, those suffixed
+        // values may not exist; in that case use Roundcube's active session
+        // credentials, but only when the active username is the login user.
         $postfix = '_iswitch';
-        $encrypted = $_SESSION['password' . $postfix] ?? null;
-
-        if (!$encrypted) {
+        $username = (string) ($this->rc->user->data['username'] ?? '');
+        if ($username === '') {
             return null;
         }
 
-        $host = (string) ($_SESSION['storage_host' . $postfix] ?? 'localhost');
-        $ssl = $_SESSION['storage_ssl' . $postfix] ?? null;
-        $port = (int) ($_SESSION['storage_port' . $postfix] ?? 143);
+        $suffix_password = $_SESSION['password' . $postfix] ?? null;
+        if (is_string($suffix_password) && $suffix_password !== '') {
+            $encrypted = $suffix_password;
+            $host = (string) ($_SESSION['storage_host' . $postfix] ?? 'localhost');
+            $ssl = $_SESSION['storage_ssl' . $postfix] ?? null;
+            $port = (int) ($_SESSION['storage_port' . $postfix] ?? 143);
+        } else {
+            // No saved primary snapshot: only use the live Roundcube session
+            // if Gecka is currently showing the actual primary login account.
+            $active_username = (string) ($_SESSION['username'] ?? $username);
+            if (strcasecmp($active_username, $username) !== 0) {
+                return null;
+            }
+
+            $encrypted = $_SESSION['password'] ?? null;
+            if (!is_string($encrypted) || $encrypted === '') {
+                return null;
+            }
+            $host = (string) ($_SESSION['storage_host'] ?? 'localhost');
+            $ssl = $_SESSION['storage_ssl'] ?? null;
+            $port = (int) ($_SESSION['storage_port'] ?? 143);
+        }
 
         $parsed = $this->parse_host($host);
         if ($parsed['ssl']) {
             $ssl = $parsed['ssl'];
         }
 
-        $username = (string) ($this->rc->user->data['username'] ?? '');
-        if ($username === '') {
-            return null;
+        $identity = $this->rc->user->get_identity();
+        $label = (string) ($_SESSION['global_alias'] ?? ($identity['name'] ?? $username));
+        if (trim($label) === '') {
+            $label = $username;
         }
 
         return [
             'key'       => 'primary:0',
-            'label'     => (string) ($_SESSION['global_alias'] ?? $username),
+            'label'     => $label,
             'host'      => $parsed['host'],
             'ssl'       => $ssl,
             'port'      => $port ?: ($ssl === 'ssl' ? 993 : 143),
             'username'  => $username,
-            'password'  => (string) $encrypted,
+            'password'  => $encrypted,
             'encrypted' => true,
             'source'    => 'primary',
             'iid'       => 0,

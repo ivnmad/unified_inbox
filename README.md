@@ -1,6 +1,11 @@
-# Unified Inbox 0.1.4
+# Unified Inbox 0.1.5
 
 Independent Roundcube plugin prototype for a read-only merged view of the primary mailbox and enabled Gecka `ident_switch` accounts.
+
+## Changes in 0.1.5
+
+- Restores the primary login mailbox in account preferences when Gecka has not yet created a saved `_iswitch` primary-session snapshot. The live Roundcube session is used only when its active username matches the login username.
+- Keeps the existing saved-primary-session path when Gecka has switched to a secondary account.
 
 ## Changes in 0.1.4
 
@@ -37,14 +42,14 @@ The Gecka adapter reads the enabled root account rows from Gecka's `ident_switch
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo cp -a unified_inbox unified_inbox.backup-before-0.1.4
+   sudo cp -a unified_inbox unified_inbox.backup-before-0.1.5
    ```
 
-2. Upload `unified_inbox_0.1.4.zip` to the test server, then extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root.
+2. Upload `unified_inbox_0.1.5.zip` to the test server, then extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root.
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo unzip -o /path/to/unified_inbox_0.1.4.zip
+   sudo unzip -o /path/to/unified_inbox_0.1.5.zip
    sudo chown -R www-data:www-data unified_inbox
    ```
 
@@ -72,7 +77,7 @@ On the test server only:
 ```bash
 cd /var/www/html/roundcube/plugins
 sudo rm -rf unified_inbox
-sudo mv unified_inbox.backup-before-0.1.4 unified_inbox
+sudo mv unified_inbox.backup-before-0.1.5 unified_inbox
 ```
 
 If you have not made the backup, do not run the rollback commands; restore your prior 0.1.2 ZIP instead.
