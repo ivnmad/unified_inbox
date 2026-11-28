@@ -151,27 +151,70 @@ class UnifiedInboxImapReader
     private function header_value($header, string $name): string
     {
         $value = $header->$name ?? '';
+
+        // Roundcube's IMAP parser can expose address headers as arrays of
+        // rcube_address objects. Preserve both the display name and address;
+        // mailto() alone contains only the address and loses encoded names.
         if (is_array($value)) {
             $parts = [];
             foreach ($value as $item) {
-                if (is_object($item) && method_exists($item, 'mailto')) {
-                    $parts[] = $item->mailto();
-                } elseif (is_object($item) && isset($item->string)) {
-                    $parts[] = $item->string;
-                } elseif (is_scalar($item)) {
-                    $parts[] = (string) $item;
+                $part = $this->normalize_header_component($item);
+                if ($part !== '') {
+                    $parts[] = $part;
                 }
             }
             $value = implode(', ', $parts);
-        } elseif (is_object($value) && method_exists($value, 'mailto')) {
-            $value = $value->mailto();
-        } elseif (is_object($value) && isset($value->string)) {
-            $value = $value->string;
-        } elseif (!is_scalar($value)) {
-            $value = '';
+        } else {
+            $value = $this->normalize_header_component($value);
         }
 
-        return trim(strip_tags((string) $value));
+        return trim($value);
+    }
+
+    /** Convert a scalar or Roundcube address object to decoded header text. */
+    private function normalize_header_component($value): string
+    {
+        if (is_object($value)) {
+            $address = method_exists($value, 'mailto') ? (string) $value->mailto() : '';
+            $name = isset($value->name) && is_scalar($value->name)
+                ? (string) $value->name
+                : '';
+
+            // Some Roundcube versions expose the display phrase as `string`.
+            if ($name === '' && isset($value->string) && is_scalar($value->string)) {
+                $candidate = (string) $value->string;
+                if ($candidate !== $address) {
+                    $name = $candidate;
+                }
+            }
+
+            if ($address !== '') {
+                $name = $this->decode_header_text($name);
+                return $name !== '' ? $name . ' <' . $address . '>' : $address;
+            }
+
+            if (isset($value->string) && is_scalar($value->string)) {
+                $value = (string) $value->string;
+            } else {
+                return '';
+            }
+        }
+
+        if (!is_scalar($value)) {
+            return '';
+        }
+
+        return $this->decode_header_text((string) $value);
+    }
+
+    /** Decode RFC 2047 encoded words using Roundcube's MIME decoder. */
+    private function decode_header_text(string $value): string
+    {
+        if (class_exists('rcube_mime') && $value !== '') {
+            $value = rcube_mime::decode_mime_string($value);
+        }
+
+        return trim(strip_tags($value));
     }
 
     /** Fetch one message by account-local UID without changing its flags. */

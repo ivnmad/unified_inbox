@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.11] - 2026-11-28
+
+### Fixed
+- Decode RFC 2047 MIME-encoded subject and sender headers in the merged message summary, matching the decoding already used in the message reader.
+- Preserve sender display names and email addresses when Roundcube supplies parsed address objects, rather than displaying only the address or omitting the name.
+- Keep decoded long subject and sender text contained within the fixed summary columns.
+
 ## [0.1.10] - 2026-11-28
 
 ### Fixed

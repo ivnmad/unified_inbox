@@ -88,6 +88,8 @@
 #unified-inbox .unified-messages td a:hover,
 #unified-inbox .unified-messages td a:focus { text-decoration: underline; }
 #unified-inbox .unified-messages td.unified-col-date span { -webkit-line-clamp: 2; font-variant-numeric: tabular-nums; }
+#unified-inbox .unified-messages td.unified-col-from span { -webkit-line-clamp: 3; }
+#unified-inbox .unified-messages td.unified-col-subject a { -webkit-line-clamp: 2; line-height: 1.35; }
 #unified-inbox .unified-messages td.unified-col-status span { display: inline-block; -webkit-line-clamp: unset; }
 #unified-inbox .unified-messages tr.selected td { background: var(--listing-selected-bg, #e8f1fa); }
 #unified-inbox .unified-messages tr.selected td a { font-weight: 700; }

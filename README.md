@@ -12,7 +12,7 @@ The project is intended to provide a Thunderbird-style multi-account workflow in
 - Identifies each message by its originating account and account-local IMAP UID.
 - Displays the independent message states **Unread**, **Read**, **Unread Flagged**, and **Read Flagged**.
 - Displays the merged message list and selected message together in a two-pane reader; each pane has its own scrolling area and the selected message is fetched from its originating account.
-- Uses consistent message-list column sizing, truncation/wrapping, and a constrained message-body area for more predictable formatting.
+- Uses consistent message-list column sizing, truncation/wrapping, decoded MIME subject and sender headers, and a constrained message-body area for more predictable formatting.
 - Isolates individual account connection failures so one unavailable account does not prevent other accounts from appearing.
 - Uses existing Roundcube/Gecka credential material at connection time; it does not save mailbox passwords in Unified Inbox preferences or files.
 
@@ -37,14 +37,14 @@ Install only on the isolated test server until all account and message operation
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo cp -a unified_inbox unified_inbox.backup-before-0.1.10
+   sudo cp -a unified_inbox unified_inbox.backup-before-0.1.11
    ```
 
-2. Upload `unified_inbox_0.1.10.zip` to the server and extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root:
+2. Upload `unified_inbox_0.1.11.zip` to the server and extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root:
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo unzip -o /path/to/unified_inbox_0.1.10.zip
+   sudo unzip -o /path/to/unified_inbox_0.1.11.zip
    sudo chown -R www-data:www-data unified_inbox
    ```
 
@@ -84,7 +84,7 @@ On the test server:
 ```bash
 cd /var/www/html/roundcube/plugins
 sudo rm -rf unified_inbox
-sudo mv unified_inbox.backup-before-0.1.10 unified_inbox
+sudo mv unified_inbox.backup-before-0.1.11 unified_inbox
 ```
 
 Do not run the rollback if the backup directory does not exist. Do not deploy to production until the test checklist has passed.
