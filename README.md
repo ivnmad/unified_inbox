@@ -11,13 +11,13 @@ The project is intended to provide a Thunderbird-style multi-account workflow in
 - Retrieves recent INBOX message headers from each selected account and merges them newest-first.
 - Identifies each message by its originating account and account-local IMAP UID.
 - Displays the independent message states **Unread**, **Read**, **Unread Flagged**, and **Read Flagged**.
-- Opens a selected message from its originating account in a separate read-only message page.
+- Displays the merged message list and selected message together in an integrated two-pane reader; the selected message is fetched from its originating account.
 - Isolates individual account connection failures so one unavailable account does not prevent other accounts from appearing.
 - Uses existing Roundcube/Gecka credential material at connection time; it does not save mailbox passwords in Unified Inbox preferences or files.
 
 ## Current limitations
 
-This is an early prototype. The message list and message reader are functional, but the reader is not yet integrated into Roundcube's split-pane mailbox layout. Message actions are not implemented yet: marking read/unread, deleting, moving messages, and replying are planned work. Attachments and a full Roundcube-equivalent MIME rendering experience are also not yet implemented.
+This is an early prototype. The two-pane reader is an independent plugin layout rather than Roundcube's native mailbox list/view controller. Message actions are not implemented yet: marking read/unread, deleting, moving messages, and replying are planned work. Attachments and a full Roundcube-equivalent MIME rendering experience are also not yet implemented.
 
 ## Requirements
 
@@ -36,14 +36,14 @@ Install only on the isolated test server until all account and message operation
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo cp -a unified_inbox unified_inbox.backup-before-0.1.8
+   sudo cp -a unified_inbox unified_inbox.backup-before-0.1.9
    ```
 
-2. Upload `unified_inbox_0.1.8.zip` to the server and extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root:
+2. Upload `unified_inbox_0.1.9.zip` to the server and extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root:
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo unzip -o /path/to/unified_inbox_0.1.8.zip
+   sudo unzip -o /path/to/unified_inbox_0.1.9.zip
    sudo chown -R www-data:www-data unified_inbox
    ```
 
@@ -80,7 +80,7 @@ On the test server:
 ```bash
 cd /var/www/html/roundcube/plugins
 sudo rm -rf unified_inbox
-sudo mv unified_inbox.backup-before-0.1.8 unified_inbox
+sudo mv unified_inbox.backup-before-0.1.9 unified_inbox
 ```
 
 Do not run the rollback if the backup directory does not exist. Do not deploy to production until the test checklist has passed.

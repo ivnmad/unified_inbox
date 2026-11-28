@@ -16,3 +16,74 @@
 #unified-inbox .unified-message-body { overflow-wrap: anywhere; }
 #unified-inbox .unified-message-plain { white-space: normal; line-height: 1.5; }
 #unified-inbox .unified-message-html { overflow-x: auto; }
+
+
+/* Integrated two-pane reader. Keep the surrounding Roundcube plugin page intact. */
+#unified-inbox .unified-inbox-heading { margin-bottom: .75rem; }
+#unified-inbox .unified-inbox-heading h2 { margin-bottom: .35rem; }
+#unified-inbox .unified-inbox-layout {
+    display: grid;
+    grid-template-columns: minmax(28rem, 46%) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: stretch;
+    min-height: 32rem;
+}
+#unified-inbox .unified-inbox-list-pane,
+#unified-inbox .unified-inbox-reader-pane {
+    min-width: 0;
+    min-height: 28rem;
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: .35rem;
+    background: var(--body-bg, #fff);
+}
+#unified-inbox .unified-inbox-list-pane { overflow: auto; }
+#unified-inbox .unified-messages { margin: 0; }
+#unified-inbox .unified-messages th { position: sticky; top: 0; z-index: 1; }
+#unified-inbox .unified-messages td,
+#unified-inbox .unified-messages th { padding: .55rem .65rem; }
+#unified-inbox .unified-messages tr.selected td { background: var(--listing-selected-bg, #e8f1fa); }
+#unified-inbox .unified-messages td:nth-child(3) { min-width: 10rem; }
+#unified-inbox .unified-inbox-pagination { padding: .65rem; }
+#unified-inbox .unified-inbox-reader-pane { overflow: auto; }
+#unified-inbox .unified-reader-empty {
+    min-height: 28rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+#unified-inbox .unified-reader-toolbar {
+    padding: .65rem 1rem;
+    border-bottom: 1px solid var(--border-color, #ddd);
+    background: var(--toolbar-bg, transparent);
+}
+#unified-inbox .unified-reader-message { padding: 1rem 1.25rem 2rem; }
+#unified-inbox .unified-reader-message > h2 {
+    overflow-wrap: anywhere;
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+}
+#unified-inbox .unified-message-meta { margin-bottom: 1rem; }
+#unified-inbox .unified-message-body { min-width: 0; }
+#unified-inbox .unified-message-html img { max-width: 100%; height: auto; }
+#unified-inbox .unified-message-html table { max-width: 100%; }
+#unified-inbox .unified-message-html pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 900px) {
+    #unified-inbox .unified-inbox-layout {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
+    }
+    #unified-inbox .unified-inbox-list-pane { max-height: 42vh; }
+    #unified-inbox .unified-inbox-reader-pane { min-height: 24rem; }
+}
+@media (max-width: 600px) {
+    #unified-inbox { padding: .5rem; }
+    #unified-inbox .unified-inbox-list-pane { max-height: 38vh; }
+    #unified-inbox .unified-messages th,
+    #unified-inbox .unified-messages td { padding: .4rem; }
+    #unified-inbox .unified-message-meta {
+        grid-template-columns: minmax(3.2rem, auto) minmax(0, 1fr);
+        gap: .35rem .6rem;
+    }
+}

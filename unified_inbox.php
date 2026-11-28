@@ -224,11 +224,15 @@ class unified_inbox extends rcube_plugin
         $accounts = (new UnifiedInboxAccountProvider($rc))->get_accounts();
         $selected = $this->selected_accounts($accounts);
         $page = max(1, (int) rcube_utils::get_input_value('_page', rcube_utils::INPUT_GET));
+        $selected_account_key = (string) rcube_utils::get_input_value('_account', rcube_utils::INPUT_GET);
+        $selected_uid = (int) rcube_utils::get_input_value('_uid', rcube_utils::INPUT_GET);
         $per_page = 50;
         $messages = [];
         $errors = [];
+        $account_by_key = [];
 
         foreach ($accounts as $account) {
+            $account_by_key[$account['key']] = $account;
             if (!in_array($account['key'], $selected, true)) {
                 continue;
             }
@@ -236,7 +240,6 @@ class unified_inbox extends rcube_plugin
                 $reader = new UnifiedInboxImapReader($rc, $account);
                 $messages = array_merge($messages, $reader->latest_headers(($page * $per_page) + $per_page));
             } catch (Throwable $e) {
-                // Isolate account failures; do not expose server details or credentials.
                 $errors[] = $account['label'] . ': ' . $this->gettext('account_unavailable');
                 rcube::raise_error(['code' => 500, 'type' => 'php', 'file' => __FILE__, 'line' => __LINE__,
                     'message' => 'Unified Inbox account read failed: ' . $e->getMessage()], true, false);
@@ -249,15 +252,29 @@ class unified_inbox extends rcube_plugin
         $total_loaded = count($messages);
         $messages = array_slice($messages, ($page - 1) * $per_page, $per_page);
 
+        // Only allow a selected message that belongs to a currently included account.
+        $selected_message = null;
+        if ($selected_uid > 0 && isset($account_by_key[$selected_account_key])
+            && in_array($selected_account_key, $selected, true)) {
+            foreach ($messages as $candidate) {
+                if ($candidate['account_key'] === $selected_account_key && (int) $candidate['uid'] === $selected_uid) {
+                    $selected_message = $candidate;
+                    break;
+                }
+            }
+        }
+
         $html = '<div id="unified-inbox" class="boxcontent">';
-        $html .= '<h2>Unified Inbox</h2>';
+        $html .= '<div class="unified-inbox-heading"><h2>Unified Inbox</h2>';
         $html .= '<p class="hint">' . rcube::Q($this->gettext('readonly_intro')) . ' <a href="./?_task=settings&amp;_action=plugin.unified_inbox_prefs">'
-            . rcube::Q($this->gettext('choose_accounts')) . '</a></p>';
+            . rcube::Q($this->gettext('choose_accounts')) . '</a></p></div>';
 
         if ($errors) {
             $html .= '<div class="ui-alert">' . rcube::Q(implode(' | ', $errors)) . '</div>';
         }
 
+        $html .= '<div class="unified-inbox-layout">';
+        $html .= '<section class="unified-inbox-list-pane" aria-label="Unified message list">';
         $html .= '<table class="records-table unified-messages"><thead><tr>';
         $html .= '<th>' . rcube::Q($this->gettext('date')) . '</th><th>' . rcube::Q($this->gettext('from')) . '</th><th>'
             . rcube::Q($this->gettext('subject')) . '</th><th>' . rcube::Q($this->gettext('account')) . '</th><th>'
@@ -268,27 +285,58 @@ class unified_inbox extends rcube_plugin
         } else {
             foreach ($messages as $message) {
                 $date = $message['timestamp'] ? date('Y-m-d H:i', $message['timestamp']) : '';
-                $open_url = './?_task=mail&amp;_action=plugin.unified_inbox_message&amp;_account=' . rawurlencode($message['account_key'])
-                    . '&amp;_uid=' . (int) $message['uid'];
-                $html .= '<tr><td>' . rcube::Q($date) . '</td><td>' . rcube::Q($message['from']) . '</td><td>'
-                    . '<a href="' . $open_url . '">' . rcube::Q($message['subject'] ?: '(no subject)') . '</a></td><td>' . rcube::Q($message['account']) . '</td><td>'
+                $is_selected = $selected_message
+                    && $selected_message['account_key'] === $message['account_key']
+                    && (int) $selected_message['uid'] === (int) $message['uid'];
+                $open_url = './?_task=mail&amp;_action=plugin.unified_inbox&amp;_page=' . $page
+                    . '&amp;_account=' . rawurlencode($message['account_key']) . '&amp;_uid=' . (int) $message['uid'];
+                $html .= '<tr' . ($is_selected ? ' class="selected"' : '') . '><td>' . rcube::Q($date) . '</td><td>' . rcube::Q($message['from']) . '</td><td>'
+                    . '<a href="' . $open_url . '"' . ($is_selected ? ' aria-current="true"' : '') . '>' . rcube::Q($message['subject'] ?: '(no subject)') . '</a></td><td>' . rcube::Q($message['account']) . '</td><td>'
                     . '<span class="unified-status' . (!empty($message['seen']) ? ' is-read' : ' is-unread') . (!empty($message['flagged']) ? ' is-flagged' : '') . '">'
                     . rcube::Q(!empty($message['seen']) ? (!empty($message['flagged']) ? 'Read Flagged' : 'Read') : (!empty($message['flagged']) ? 'Unread Flagged' : 'Unread'))
-                    . '</span>'
-                    . '</td></tr>';
+                    . '</span></td></tr>';
             }
         }
 
         $html .= '</tbody></table>';
-        $html .= '<p class="hint">' . rcube::Q($this->gettext('bounded_window')) . '</p>';
+        $html .= '<div class="unified-inbox-pagination">';
         if ($page > 1) {
             $html .= '<a href="./?_task=mail&amp;_action=plugin.unified_inbox&amp;_page=' . ($page - 1) . '">' . rcube::Q($this->gettext('previous')) . '</a> ';
         }
         if ($total_loaded > $page * $per_page) {
             $html .= '<a href="./?_task=mail&amp;_action=plugin.unified_inbox&amp;_page=' . ($page + 1) . '">' . rcube::Q($this->gettext('next')) . '</a>';
         }
+        $html .= '</div></section>';
+
+        $html .= '<section class="unified-inbox-reader-pane" aria-label="Selected message">';
+        if (!$selected_message) {
+            $html .= '<div class="unified-reader-empty"><span class="hint">Select a message to read it here.</span></div>';
+        } else {
+            try {
+                $account = $account_by_key[$selected_account_key];
+                $reader = new UnifiedInboxImapReader($rc, $account);
+                $message = $reader->fetch_message($selected_uid, 'INBOX');
+                $html .= '<div class="unified-reader-toolbar"><a href="./?_task=mail&amp;_action=plugin.unified_inbox&amp;_page=' . $page . '">Clear selection</a></div>';
+                $html .= '<article class="unified-reader-message">';
+                $html .= '<h2>' . rcube::Q($message['subject'] ?: '(no subject)') . '</h2>';
+                $html .= '<dl class="unified-message-meta">';
+                $html .= '<dt>' . rcube::Q($this->gettext('from')) . '</dt><dd>' . rcube::Q($message['from']) . '</dd>';
+                if ($message['to'] !== '') $html .= '<dt>To</dt><dd>' . rcube::Q($message['to']) . '</dd>';
+                if ($message['cc'] !== '') $html .= '<dt>Cc</dt><dd>' . rcube::Q($message['cc']) . '</dd>';
+                $html .= '<dt>' . rcube::Q($this->gettext('date')) . '</dt><dd>' . rcube::Q($message['date']) . '</dd>';
+                $html .= '<dt>' . rcube::Q($this->gettext('account')) . '</dt><dd>' . rcube::Q($account['label']) . '</dd>';
+                $html .= '</dl><hr><div class="unified-message-body">' . $message['body_html'] . '</div></article>';
+            } catch (Throwable $e) {
+                rcube::raise_error(['code' => 500, 'type' => 'php', 'file' => __FILE__, 'line' => __LINE__,
+                    'message' => 'Unified Inbox message open failed: ' . $e->getMessage()], true, false);
+                $html .= '<div class="ui-alert">' . rcube::Q($this->gettext('message_unavailable')) . '</div>';
+            }
+        }
+        $html .= '</section></div>';
+        $html .= '<p class="hint">' . rcube::Q($this->gettext('bounded_window')) . '</p>';
         $html .= '</div>';
 
         return $html;
     }
+
 }

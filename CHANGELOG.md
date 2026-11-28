@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.9] - 2026-11-28
+
+### Added
+- Replaced the separate message-opening navigation flow with an integrated two-pane Unified Inbox view.
+- Kept the merged message list visible while displaying the selected message in the reader pane.
+- Added responsive layout rules that stack the list and reader on narrower screens.
+
+### Changed
+- Message selection now remains on the Unified Inbox action and retains the current page.
+- Added a clear-selection link to return the reader pane to its empty state.
+
+### Security
+- Continued to validate the selected account against the user's enabled account selection before fetching a message.
+- Continued to sanitize HTML message bodies and block remote resources.
+
 ## [0.1.8] - 2026-11-28
 
 ### Fixed
