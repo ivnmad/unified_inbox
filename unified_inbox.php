@@ -264,7 +264,7 @@ class unified_inbox extends rcube_plugin
             }
         }
 
-        $html = '<div id="unified-inbox" class="boxcontent">';
+        $html = '<div id="unified-inbox" class="boxcontent unified-inbox-app">';
         $html .= '<div class="unified-inbox-heading"><h2>Unified Inbox</h2>';
         $html .= '<p class="hint">' . rcube::Q($this->gettext('readonly_intro')) . ' <a href="./?_task=settings&amp;_action=plugin.unified_inbox_prefs">'
             . rcube::Q($this->gettext('choose_accounts')) . '</a></p></div>';
@@ -290,8 +290,8 @@ class unified_inbox extends rcube_plugin
                     && (int) $selected_message['uid'] === (int) $message['uid'];
                 $open_url = './?_task=mail&amp;_action=plugin.unified_inbox&amp;_page=' . $page
                     . '&amp;_account=' . rawurlencode($message['account_key']) . '&amp;_uid=' . (int) $message['uid'];
-                $html .= '<tr' . ($is_selected ? ' class="selected"' : '') . '><td>' . rcube::Q($date) . '</td><td>' . rcube::Q($message['from']) . '</td><td>'
-                    . '<a href="' . $open_url . '"' . ($is_selected ? ' aria-current="true"' : '') . '>' . rcube::Q($message['subject'] ?: '(no subject)') . '</a></td><td>' . rcube::Q($message['account']) . '</td><td>'
+                $html .= '<tr' . ($is_selected ? ' class="selected"' : '') . '><td class="unified-col-date"><span>' . rcube::Q($date) . '</span></td><td class="unified-col-from"><span>' . rcube::Q($message['from']) . '</span></td><td class="unified-col-subject">'
+                    . '<a href="' . $open_url . '"' . ($is_selected ? ' aria-current="true"' : '') . '>' . rcube::Q($message['subject'] ?: '(no subject)') . '</a></td><td class="unified-col-account"><span>' . rcube::Q($message['account']) . '</span></td><td class="unified-col-status">'
                     . '<span class="unified-status' . (!empty($message['seen']) ? ' is-read' : ' is-unread') . (!empty($message['flagged']) ? ' is-flagged' : '') . '">'
                     . rcube::Q(!empty($message['seen']) ? (!empty($message['flagged']) ? 'Read Flagged' : 'Read') : (!empty($message['flagged']) ? 'Unread Flagged' : 'Unread'))
                     . '</span></td></tr>';

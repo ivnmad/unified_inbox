@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.10] - 2026-11-28
+
+### Fixed
+- Constrained the Unified Inbox work area to the available browser height so the message list and reading pane scroll independently instead of scrolling the whole page.
+- Added viewport resize handling so the pane height adjusts when the browser window changes size.
+- Improved message-list column widths, typography, wrapping, truncation, selected-row styling, and sticky headers/pagination.
+- Normalized the reading-pane typography and constrained wide message content, images, and tables to reduce layout breakage.
+
+### Changed
+- Documented that the current view uses Roundcube's standard page chrome but is not yet integrated with the native mailbox list/message controller.
+
 ## [0.1.9] - 2026-11-28
 
 ### Added

@@ -25,3 +25,20 @@ $(function () {
         $('#unified-inbox input[name="_accounts[]"]').prop('checked', false);
     });
 });
+
+/* Fit the two-pane work area into Roundcube's available viewport height. */
+$(function () {
+    var $app = $('#unified-inbox.unified-inbox-app');
+    if (!$app.length) {
+        return;
+    }
+
+    var fitUnifiedInbox = function () {
+        var top = $app[0].getBoundingClientRect().top;
+        var available = Math.floor(window.innerHeight - top - 14);
+        $app.css({ height: Math.max(320, available) + 'px', maxHeight: 'none' });
+    };
+
+    fitUnifiedInbox();
+    $(window).on('resize.unifiedInboxLayout', fitUnifiedInbox);
+});

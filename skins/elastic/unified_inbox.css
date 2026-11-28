@@ -1,89 +1,146 @@
-#unified-inbox { padding: 1rem; overflow: auto; }
-#unified-inbox h2 { margin: 0 0 1rem; }
-#unified-inbox .hint { color: var(--text-secondary, #666); margin: .5rem 0 1rem; }
+/* General plugin and preferences styling. */
+#unified-inbox { box-sizing: border-box; padding: 1rem; }
+#unified-inbox h2 { margin: 0 0 .75rem; }
+#unified-inbox .hint { color: var(--text-secondary, #666); margin: .35rem 0 .65rem; }
 #unified-inbox .unified-account-list { display: flex; flex-direction: column; gap: .5rem; margin: .75rem 0; }
 #unified-inbox .unified-account-list label { display: block; }
-#unified-inbox .unified-messages { width: 100%; }
-#unified-inbox .unified-messages td { overflow-wrap: anywhere; }
-
-#unified-inbox .unified-status { display: inline-block; padding: .15rem .45rem; border-radius: .35rem; white-space: nowrap; }
-#unified-inbox .unified-status.is-unread { font-weight: 700; }
+#unified-inbox .unified-status { display: inline-block; padding: .15rem .4rem; border-radius: .25rem; white-space: normal; font-size: .78rem; line-height: 1.25; }
+#unified-inbox .unified-status.is-unread,
 #unified-inbox .unified-status.is-flagged { font-weight: 700; }
-
-#unified-inbox .unified-message-meta { display: grid; grid-template-columns: minmax(4rem, auto) 1fr; gap: .35rem 1rem; }
+#unified-inbox .unified-message-meta { display: grid; grid-template-columns: minmax(3.5rem, auto) minmax(0, 1fr); gap: .35rem .85rem; margin: 0 0 1rem; font-size: .875rem; line-height: 1.4; }
 #unified-inbox .unified-message-meta dt { font-weight: 700; }
-#unified-inbox .unified-message-meta dd { margin: 0; overflow-wrap: anywhere; }
-#unified-inbox .unified-message-body { overflow-wrap: anywhere; }
-#unified-inbox .unified-message-plain { white-space: normal; line-height: 1.5; }
-#unified-inbox .unified-message-html { overflow-x: auto; }
+#unified-inbox .unified-message-meta dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 
-
-/* Integrated two-pane reader. Keep the surrounding Roundcube plugin page intact. */
-#unified-inbox .unified-inbox-heading { margin-bottom: .75rem; }
-#unified-inbox .unified-inbox-heading h2 { margin-bottom: .35rem; }
+/* The plugin uses Roundcube's normal page chrome, with its own contained work area. */
+#unified-inbox.unified-inbox-app {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 190px);
+    min-height: 360px;
+    max-height: calc(100vh - 110px);
+    overflow: hidden;
+    padding: .75rem;
+}
+#unified-inbox .unified-inbox-heading { flex: 0 0 auto; margin: 0 0 .55rem; }
+#unified-inbox .unified-inbox-heading h2 { margin: 0 0 .2rem; font-size: 1.15rem; line-height: 1.3; }
+#unified-inbox .unified-inbox-heading .hint { margin: 0; font-size: .82rem; }
 #unified-inbox .unified-inbox-layout {
     display: grid;
-    grid-template-columns: minmax(28rem, 46%) minmax(0, 1fr);
-    gap: 1rem;
-    align-items: stretch;
-    min-height: 32rem;
+    grid-template-columns: minmax(19rem, 43%) minmax(0, 1fr);
+    gap: .65rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
 }
 #unified-inbox .unified-inbox-list-pane,
 #unified-inbox .unified-inbox-reader-pane {
     min-width: 0;
-    min-height: 28rem;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: .35rem;
+    min-height: 0;
+    height: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--border-color, #d8d8d8);
+    border-radius: .25rem;
     background: var(--body-bg, #fff);
+    scrollbar-gutter: stable;
 }
-#unified-inbox .unified-inbox-list-pane { overflow: auto; }
-#unified-inbox .unified-messages { margin: 0; }
-#unified-inbox .unified-messages th { position: sticky; top: 0; z-index: 1; }
-#unified-inbox .unified-messages td,
-#unified-inbox .unified-messages th { padding: .55rem .65rem; }
-#unified-inbox .unified-messages tr.selected td { background: var(--listing-selected-bg, #e8f1fa); }
-#unified-inbox .unified-messages td:nth-child(3) { min-width: 10rem; }
-#unified-inbox .unified-inbox-pagination { padding: .65rem; }
-#unified-inbox .unified-inbox-reader-pane { overflow: auto; }
-#unified-inbox .unified-reader-empty {
-    min-height: 28rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
+#unified-inbox .unified-inbox-list-pane { padding: 0; }
+#unified-inbox .unified-messages {
+    width: 100%;
+    margin: 0;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: .82rem;
+    line-height: 1.35;
 }
-#unified-inbox .unified-reader-toolbar {
-    padding: .65rem 1rem;
-    border-bottom: 1px solid var(--border-color, #ddd);
-    background: var(--toolbar-bg, transparent);
+#unified-inbox .unified-messages th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: .55rem .45rem;
+    background: var(--listing-header-bg, var(--body-bg, #fff));
+    font-size: .75rem;
+    line-height: 1.25;
+    text-align: left;
 }
-#unified-inbox .unified-reader-message { padding: 1rem 1.25rem 2rem; }
-#unified-inbox .unified-reader-message > h2 {
+#unified-inbox .unified-messages td {
+    padding: .55rem .45rem;
+    vertical-align: top;
     overflow-wrap: anywhere;
-    margin: 0 0 1rem;
-    font-size: 1.25rem;
+    word-break: normal;
 }
-#unified-inbox .unified-message-meta { margin-bottom: 1rem; }
-#unified-inbox .unified-message-body { min-width: 0; }
-#unified-inbox .unified-message-html img { max-width: 100%; height: auto; }
-#unified-inbox .unified-message-html table { max-width: 100%; }
+#unified-inbox .unified-messages th:nth-child(1) { width: 19%; }
+#unified-inbox .unified-messages th:nth-child(2) { width: 20%; }
+#unified-inbox .unified-messages th:nth-child(3) { width: 29%; }
+#unified-inbox .unified-messages th:nth-child(4) { width: 16%; }
+#unified-inbox .unified-messages th:nth-child(5) { width: 16%; }
+#unified-inbox .unified-messages td span,
+#unified-inbox .unified-messages td a {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    text-overflow: ellipsis;
+}
+#unified-inbox .unified-messages td a { color: var(--link-color, #1769aa); text-decoration: none; }
+#unified-inbox .unified-messages td a:hover,
+#unified-inbox .unified-messages td a:focus { text-decoration: underline; }
+#unified-inbox .unified-messages td.unified-col-date span { -webkit-line-clamp: 2; font-variant-numeric: tabular-nums; }
+#unified-inbox .unified-messages td.unified-col-status span { display: inline-block; -webkit-line-clamp: unset; }
+#unified-inbox .unified-messages tr.selected td { background: var(--listing-selected-bg, #e8f1fa); }
+#unified-inbox .unified-messages tr.selected td a { font-weight: 700; }
+#unified-inbox .unified-inbox-pagination {
+    position: sticky;
+    bottom: 0;
+    padding: .6rem .65rem;
+    border-top: 1px solid var(--border-color, #ddd);
+    background: var(--body-bg, #fff);
+    font-size: .85rem;
+}
+#unified-inbox .unified-reader-empty { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box; }
+#unified-inbox .unified-reader-toolbar { position: sticky; top: 0; z-index: 1; padding: .55rem .9rem; border-bottom: 1px solid var(--border-color, #ddd); background: var(--body-bg, #fff); font-size: .85rem; }
+#unified-inbox .unified-reader-message { padding: 1rem 1.25rem 2rem; min-width: 0; }
+#unified-inbox .unified-reader-message > h2 {
+    margin: 0 0 .85rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+#unified-inbox .unified-message-body { min-width: 0; overflow-wrap: anywhere; font-size: .92rem; line-height: 1.5; }
+#unified-inbox .unified-message-plain { white-space: normal; line-height: 1.55; }
+#unified-inbox .unified-message-html {
+    max-width: 100%;
+    overflow-x: auto;
+    color: var(--text-color, #222);
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+#unified-inbox .unified-message-html img { max-width: 100% !important; height: auto !important; }
+#unified-inbox .unified-message-html table { max-width: 100% !important; }
 #unified-inbox .unified-message-html pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+#unified-inbox .unified-message-html p { max-width: 100%; }
+#unified-inbox .unified-message-html iframe,
+#unified-inbox .unified-message-html video,
+#unified-inbox .unified-message-html object,
+#unified-inbox .unified-message-html embed { max-width: 100%; }
+#unified-inbox > .hint { flex: 0 0 auto; margin: .35rem 0 0; font-size: .75rem; }
 
-@media (max-width: 900px) {
-    #unified-inbox .unified-inbox-layout {
-        grid-template-columns: minmax(0, 1fr);
-        min-height: 0;
-    }
-    #unified-inbox .unified-inbox-list-pane { max-height: 42vh; }
-    #unified-inbox .unified-inbox-reader-pane { min-height: 24rem; }
+@media (max-width: 1050px) {
+    #unified-inbox.unified-inbox-app { height: calc(100vh - 165px); }
+    #unified-inbox .unified-inbox-layout { grid-template-columns: minmax(16rem, 42%) minmax(0, 1fr); }
 }
-@media (max-width: 600px) {
-    #unified-inbox { padding: .5rem; }
-    #unified-inbox .unified-inbox-list-pane { max-height: 38vh; }
-    #unified-inbox .unified-messages th,
-    #unified-inbox .unified-messages td { padding: .4rem; }
-    #unified-inbox .unified-message-meta {
-        grid-template-columns: minmax(3.2rem, auto) minmax(0, 1fr);
-        gap: .35rem .6rem;
-    }
+@media (max-width: 760px) {
+    #unified-inbox.unified-inbox-app { height: calc(100vh - 145px); min-height: 420px; padding: .5rem; }
+    #unified-inbox .unified-inbox-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(9rem, 36%) minmax(0, 1fr); gap: .5rem; }
+    #unified-inbox .unified-inbox-list-pane,
+    #unified-inbox .unified-inbox-reader-pane { min-height: 0; }
+    #unified-inbox .unified-reader-message { padding: .85rem; }
+}
+@media (max-height: 600px) {
+    #unified-inbox.unified-inbox-app { height: calc(100vh - 125px); min-height: 300px; }
 }
