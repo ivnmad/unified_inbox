@@ -26,7 +26,7 @@ This is an early prototype. The message list and message reader are functional, 
 - Gecka `ident_switch` 5.0.x for discovery of additional accounts.
 - IMAP access to each participating mailbox.
 
-The primary account can be used without switching to another Gecka account first. When Gecka has switched to a secondary account, Unified Inbox uses Gecka's preserved primary-session credentials. When opened directly from the primary account, it uses Roundcube's authenticated-user password accessor.
+The primary account can be used without switching to another Gecka account first. When the primary mailbox is active, Unified Inbox uses the active Roundcube session credentials restored by Gecka (or Roundcube's authenticated-user password accessor if the session password is unavailable). When a secondary Gecka account is active, it uses Gecka's preserved primary-session credentials.
 
 ## Installation
 
@@ -36,14 +36,14 @@ Install only on the isolated test server until all account and message operation
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo cp -a unified_inbox unified_inbox.backup-before-0.1.7
+   sudo cp -a unified_inbox unified_inbox.backup-before-0.1.8
    ```
 
-2. Upload `unified_inbox_0.1.7.zip` to the server and extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root:
+2. Upload `unified_inbox_0.1.8.zip` to the server and extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root:
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo unzip -o /path/to/unified_inbox_0.1.7.zip
+   sudo unzip -o /path/to/unified_inbox_0.1.8.zip
    sudo chown -R www-data:www-data unified_inbox
    ```
 
@@ -80,7 +80,7 @@ On the test server:
 ```bash
 cd /var/www/html/roundcube/plugins
 sudo rm -rf unified_inbox
-sudo mv unified_inbox.backup-before-0.1.7 unified_inbox
+sudo mv unified_inbox.backup-before-0.1.8 unified_inbox
 ```
 
 Do not run the rollback if the backup directory does not exist. Do not deploy to production until the test checklist has passed.

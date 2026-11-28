@@ -71,48 +71,57 @@ class UnifiedInboxAccountProvider
 
     private function get_primary_account(): ?array
     {
-        // When Gecka has switched to a secondary mailbox, it preserves the
-        // original login mailbox credentials under the _iswitch suffix. When
-        // the user is still on the primary mailbox, use Roundcube's own
-        // authenticated-user password accessor rather than assuming the raw
-        // session password key is present.
         $postfix = '_iswitch';
         $username = (string) ($this->rc->user->data['username'] ?? '');
         if ($username === '') {
             return null;
         }
 
-        $suffix_password = $_SESSION['password' . $postfix] ?? null;
-        if (is_string($suffix_password) && $suffix_password !== '') {
-            $password = $suffix_password;
-            $encrypted = true;
-            $host = (string) ($_SESSION['storage_host' . $postfix] ?? 'localhost');
-            $ssl = $_SESSION['storage_ssl' . $postfix] ?? null;
-            $port = (int) ($_SESSION['storage_port' . $postfix] ?? 143);
-        } else {
-            // When Unified Inbox is opened directly from the primary mailbox,
-            // Roundcube may have the authenticated password in the rcube
-            // instance rather than in the raw session array. get_user_password()
-            // returns the decrypted value, so the reader must not decrypt it
-            // a second time. Keep the encrypted session fallback for older
-            // Roundcube builds where the method is unavailable or empty.
-            $password = method_exists($this->rc, 'get_user_password')
-                ? $this->rc->get_user_password()
-                : null;
+        // Gecka sets iid_iswitch to -1 when the user switches back to the
+        // primary mailbox. On that path it restores the primary connection
+        // details into the ordinary Roundcube session keys, while the
+        // _iswitch snapshot remains present. Always prefer the active session
+        // credentials when the primary mailbox is active; otherwise a stale
+        // or out-of-sync snapshot can cause authentication to fail.
+        $active_username = (string) ($_SESSION['username'] ?? '');
+        $active_iid = $_SESSION['iid' . $postfix] ?? null;
+        $primary_is_active = ($active_username !== '' && strcasecmp($active_username, $username) === 0)
+            || (is_numeric($active_iid) && (int) $active_iid === -1);
 
-            if (is_string($password) && $password !== '') {
+        if ($primary_is_active) {
+            $password = $_SESSION['password'] ?? null;
+            $encrypted = true;
+
+            // Some Roundcube authentication backends do not retain the
+            // encrypted password in the session. In that case, use the
+            // authenticated-user accessor, which returns plaintext.
+            if (!is_string($password) || $password === '') {
+                $password = method_exists($this->rc, 'get_user_password')
+                    ? $this->rc->get_user_password()
+                    : null;
                 $encrypted = false;
-            } else {
-                $password = $_SESSION['password'] ?? null;
-                if (!is_string($password) || $password === '') {
-                    return null;
-                }
-                $encrypted = true;
             }
 
             $host = (string) ($_SESSION['storage_host'] ?? 'localhost');
             $ssl = $_SESSION['storage_ssl'] ?? null;
             $port = (int) ($_SESSION['storage_port'] ?? 143);
+        } else {
+            // While Gecka is impersonating a secondary account, it preserves
+            // the original primary account's encrypted credentials and
+            // storage settings under the _iswitch suffix.
+            $password = $_SESSION['password' . $postfix] ?? null;
+            if (!is_string($password) || $password === '') {
+                return null;
+            }
+
+            $encrypted = true;
+            $host = (string) ($_SESSION['storage_host' . $postfix] ?? 'localhost');
+            $ssl = $_SESSION['storage_ssl' . $postfix] ?? null;
+            $port = (int) ($_SESSION['storage_port' . $postfix] ?? 143);
+        }
+
+        if (!is_string($password) || $password === '') {
+            return null;
         }
 
         $parsed = $this->parse_host($host);
@@ -121,9 +130,6 @@ class UnifiedInboxAccountProvider
         }
 
         $identity = $this->rc->user->get_identity();
-        // Use the actual mailbox/login address consistently with Gecka
-        // accounts; a display name such as "John Smith" is ambiguous when
-        // several accounts are selected.
         $label = trim((string) ($identity['email'] ?? ''));
         if ($label === '') {
             $label = $username;

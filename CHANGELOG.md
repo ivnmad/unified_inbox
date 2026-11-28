@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.8] - 2026-11-28
+
+### Fixed
+- Select the primary mailbox's active Roundcube session credentials when Gecka has switched back to the primary account (`iid_iswitch = -1` or the active session username matches the login username).
+- Use the preserved `_iswitch` primary credential snapshot only while a secondary Gecka account is active, avoiding stale-snapshot authentication failures after switching back.
+
 All notable changes to Unified Inbox are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
