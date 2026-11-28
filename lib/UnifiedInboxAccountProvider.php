@@ -72,10 +72,10 @@ class UnifiedInboxAccountProvider
     private function get_primary_account(): ?array
     {
         // When Gecka has switched to a secondary mailbox, it preserves the
-        // original login mailbox credentials under the _iswitch suffix.
-        // When the user is currently on the primary mailbox, those suffixed
-        // values may not exist; in that case use Roundcube's active session
-        // credentials, but only when the active username is the login user.
+        // original login mailbox credentials under the _iswitch suffix. When
+        // the user is still on the primary mailbox, use Roundcube's own
+        // authenticated-user password accessor rather than assuming the raw
+        // session password key is present.
         $postfix = '_iswitch';
         $username = (string) ($this->rc->user->data['username'] ?? '');
         if ($username === '') {
@@ -84,22 +84,32 @@ class UnifiedInboxAccountProvider
 
         $suffix_password = $_SESSION['password' . $postfix] ?? null;
         if (is_string($suffix_password) && $suffix_password !== '') {
-            $encrypted = $suffix_password;
+            $password = $suffix_password;
+            $encrypted = true;
             $host = (string) ($_SESSION['storage_host' . $postfix] ?? 'localhost');
             $ssl = $_SESSION['storage_ssl' . $postfix] ?? null;
             $port = (int) ($_SESSION['storage_port' . $postfix] ?? 143);
         } else {
-            // No saved primary snapshot: Roundcube's live session is the
-            // primary login session. Do not compare $_SESSION['username']:
-            // Gecka and Roundcube versions can store that value in different
-            // forms (or omit it), which previously hid the primary account
-            // when Unified Inbox was opened directly from the primary inbox.
-            // When Gecka has switched accounts, its preserved _iswitch
-            // snapshot above takes precedence.
-            $encrypted = $_SESSION['password'] ?? null;
-            if (!is_string($encrypted) || $encrypted === '') {
-                return null;
+            // When Unified Inbox is opened directly from the primary mailbox,
+            // Roundcube may have the authenticated password in the rcube
+            // instance rather than in the raw session array. get_user_password()
+            // returns the decrypted value, so the reader must not decrypt it
+            // a second time. Keep the encrypted session fallback for older
+            // Roundcube builds where the method is unavailable or empty.
+            $password = method_exists($this->rc, 'get_user_password')
+                ? $this->rc->get_user_password()
+                : null;
+
+            if (is_string($password) && $password !== '') {
+                $encrypted = false;
+            } else {
+                $password = $_SESSION['password'] ?? null;
+                if (!is_string($password) || $password === '') {
+                    return null;
+                }
+                $encrypted = true;
             }
+
             $host = (string) ($_SESSION['storage_host'] ?? 'localhost');
             $ssl = $_SESSION['storage_ssl'] ?? null;
             $port = (int) ($_SESSION['storage_port'] ?? 143);
@@ -126,8 +136,8 @@ class UnifiedInboxAccountProvider
             'ssl'       => $ssl,
             'port'      => $port ?: ($ssl === 'ssl' ? 993 : 143),
             'username'  => $username,
-            'password'  => $encrypted,
-            'encrypted' => true,
+            'password'  => $password,
+            'encrypted' => $encrypted,
             'source'    => 'primary',
             'iid'       => 0,
         ];

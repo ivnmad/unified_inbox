@@ -1,55 +1,49 @@
-# Unified Inbox 0.1.5
+# Unified Inbox for Roundcube
 
-Independent Roundcube plugin prototype for a read-only merged view of the primary mailbox and enabled Gecka `ident_switch` accounts.
+Unified Inbox is an independent Roundcube plugin that combines messages from the user's primary mailbox and enabled Gecka `ident_switch` accounts into one chronological inbox. Each message remains on its original IMAP server; the plugin does not forward or copy mail into a collector mailbox.
 
-## Changes in 0.1.5
+The project is intended to provide a Thunderbird-style multi-account workflow inside Roundcube while leaving Roundcube core, existing mailbox configuration, and Gecka `ident_switch` files and tables unchanged.
 
-- Restores the primary login mailbox in account preferences when Gecka has not yet created a saved `_iswitch` primary-session snapshot. The live Roundcube session is used only when its active username matches the login username.
-- Keeps the existing saved-primary-session path when Gecka has switched to a secondary account.
+## Current capabilities
 
-## Changes in 0.1.4
+- Discovers the primary Roundcube login mailbox and enabled root accounts configured in Gecka `ident_switch`.
+- Lets each Roundcube user choose which accounts participate in Unified Inbox.
+- Retrieves recent INBOX message headers from each selected account and merges them newest-first.
+- Identifies each message by its originating account and account-local IMAP UID.
+- Displays the independent message states **Unread**, **Read**, **Unread Flagged**, and **Read Flagged**.
+- Opens a selected message from its originating account in a separate read-only message page.
+- Isolates individual account connection failures so one unavailable account does not prevent other accounts from appearing.
+- Uses existing Roundcube/Gecka credential material at connection time; it does not save mailbox passwords in Unified Inbox preferences or files.
 
-- Makes each subject a link to a Unified Inbox message-reading page.
-- Opens the message using its originating account key and account-local IMAP UID, always in that account's INBOX.
-- Fetches headers and a text body through a separate short-lived IMAP connection; it does not switch Gecka's active account.
-- Prefers HTML when available and sanitizes it with Roundcube's `rcube_washtml` while blocking remote resources; falls back to plain text.
-- Keeps the four independent status labels unchanged.
-- Does not yet implement mark read/unread, delete, move, attachments, or reply. Message opening is not intended to alter flags.
+## Current limitations
 
-## Changes in 0.1.3
+This is an early prototype. The message list and message reader are functional, but the reader is not yet integrated into Roundcube's split-pane mailbox layout. Message actions are not implemented yet: marking read/unread, deleting, moving messages, and replying are planned work. Attachments and a full Roundcube-equivalent MIME rendering experience are also not yet implemented.
 
-- Replaces raw numeric IMAP flag values with the four requested statuses: **Unread**, **Read**, **Unread Flagged**, and **Read Flagged**.
-- Interprets `\Seen` and `\Flagged` independently, retaining the flag names rather than flattening the IMAP flag map into numeric values.
-- This remains a read-only release: it does not change message flags or mailbox contents.
+## Requirements
 
-## Changes in 0.1.2
+- Roundcube 1.7.x (developed and checked against 1.7.7).
+- PHP 8.4 (tested for syntax with PHP 8.4).
+- Gecka `ident_switch` 5.0.x for discovery of additional accounts.
+- IMAP access to each participating mailbox.
 
-- Fixes the empty page in 0.1.1. The plugin now registers the `plugin.body` handler expected by Roundcube's built-in `plugin` skin template.
-- Adds a native **Settings → Unified Inbox** entry through Roundcube's `settings_actions` hook.
-- Moves account selection to that Settings page and saves it in the logged-in Roundcube user's preferences.
-- Keeps the Gecka selector entry and preserves Gecka's original account-switch handler for real account choices.
-- Account failures remain isolated; the page shows a generic account error and logs technical details server-side.
+The primary account can be used without switching to another Gecka account first. When Gecka has switched to a secondary account, Unified Inbox uses Gecka's preserved primary-session credentials. When opened directly from the primary account, it uses Roundcube's authenticated-user password accessor.
 
-## Scope and limitations
+## Installation
 
-This is still a read-only prototype. It lists recent INBOX headers only. It does not open messages, modify flags, move/delete messages, or send/reply. Messages remain on their original IMAP servers. No passwords are stored by this plugin; it decrypts existing Roundcube/Gecka credential material only when connecting.
+Install only on the isolated test server until all account and message operations have been verified.
 
-The Gecka adapter reads the enabled root account rows from Gecka's `ident_switch` table and the associated Roundcube identities table. Gecka 5.0.4 does not expose a public account-provider API in the inspected source, so this is an isolated schema/session integration dependency. The plugin does not modify Gecka files or tables.
-
-## Installation on the isolated test server
-
-1. Back up the existing test plugin directory:
+1. Back up the current plugin directory:
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo cp -a unified_inbox unified_inbox.backup-before-0.1.5
+   sudo cp -a unified_inbox unified_inbox.backup-before-0.1.7
    ```
 
-2. Upload `unified_inbox_0.1.5.zip` to the test server, then extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root.
+2. Upload `unified_inbox_0.1.7.zip` to the server and extract it into the plugins directory. The ZIP contains the `unified_inbox/` directory at its root:
 
    ```bash
    cd /var/www/html/roundcube/plugins
-   sudo unzip -o /path/to/unified_inbox_0.1.5.zip
+   sudo unzip -o /path/to/unified_inbox_0.1.7.zip
    sudo chown -R www-data:www-data unified_inbox
    ```
 
@@ -59,34 +53,38 @@ The Gecka adapter reads the enabled root account rows from Gecka's `ident_switch
    sudo find unified_inbox -name '*.php' -print0 | xargs -0 -n1 php -l
    ```
 
-4. No change to `config.inc.php` is needed if `unified_inbox` is already enabled. Do not alter Gecka or Roundcube core files.
+4. Ensure `unified_inbox` is enabled in Roundcube's plugin list. If it is already enabled, no configuration change is required.
+5. Reload Roundcube and open **Settings → Unified Inbox** to choose participating accounts.
 
-5. Sign out and back in (or reload Roundcube), then test:
-   - Gecka selector → Unified Inbox should display the inbox page.
-   - Click a message subject; it should open with sender, recipients, date, account and body.
-   - Use Back to Unified Inbox to return to the merged list.
-   - Verify the original Gecka account selection is unchanged.
-   - Settings should show a **Unified Inbox** section.
-   - Select/deselect accounts, save, reopen Settings, and verify the selection persists.
-   - Open Unified Inbox and verify messages from the selected accounts are merged newest-first.
+## Test checklist
+
+- Open Unified Inbox directly while logged into the primary account; the primary email address should appear in Settings and its messages should be included when selected.
+- Switch to a secondary Gecka account and open Unified Inbox; the primary account should still appear with the same email address.
+- Confirm the other enabled Gecka accounts remain visible and selectable.
+- Confirm messages are merged newest-first and the four status labels remain correct.
+- Open messages from at least two different accounts and confirm the correct account's message is displayed.
+- Confirm an unavailable account does not prevent the other selected accounts from loading.
+
+## Integration and security notes
+
+Gecka `ident_switch` 5.0.4 does not expose a public account-provider API in the inspected source. The plugin therefore isolates its dependency on Gecka's enabled root account rows and preserved session conventions in `UnifiedInboxAccountProvider`. It excludes alias rows to avoid duplicate mailboxes and does not modify Gecka's database or files.
+
+The primary mailbox's live password is obtained through Roundcube's `get_user_password()` accessor when no Gecka primary snapshot exists. That plaintext value is used only in memory for the short-lived IMAP connection; it is not written to disk or saved in preferences. Gecka-stored credentials are decrypted at connection time through Roundcube.
+
+Message bodies are sanitized with Roundcube's HTML sanitizer and remote resources are blocked by default. As with any mail client, message content is untrusted input.
 
 ## Rollback
 
-On the test server only:
+On the test server:
 
 ```bash
 cd /var/www/html/roundcube/plugins
 sudo rm -rf unified_inbox
-sudo mv unified_inbox.backup-before-0.1.5 unified_inbox
+sudo mv unified_inbox.backup-before-0.1.7 unified_inbox
 ```
 
-If you have not made the backup, do not run the rollback commands; restore your prior 0.1.2 ZIP instead.
+Do not run the rollback if the backup directory does not exist. Do not deploy to production until the test checklist has passed.
 
-## Compatibility
+## Project conventions
 
-Designed against Roundcube 1.7.7 / PHP 8.4 and Gecka ident_switch 5.0.x, using the inspected account table/session conventions. Test on the isolated mirror first. Do not deploy to production until the page, preferences persistence, and per-account IMAP reads have been verified.
-
-
-### 0.1.6 changes
-- Primary account is discovered from the live Roundcube login session when no Gecka-preserved primary snapshot is available; removed a fragile session-username comparison that could hide it when opening Unified Inbox from the primary inbox.
-- Primary account label now uses the login identity email address, matching the other account labels.
+Release notes are maintained separately in [CHANGELOG.md](CHANGELOG.md), following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0/).
